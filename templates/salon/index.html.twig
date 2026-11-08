@@ -1,39 +1,37 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Salon index{% endblock %}
+{% block title %}Salons{% endblock %}
 
 {% block body %}
-    <h1>Salon index</h1>
+    <h1>Salons</h1>
+    <p><a class="btn" href="{{ path('app_salon_new') }}">+ Nouveau salon</a></p>
 
-    <table class="table">
+    <table>
         <thead>
             <tr>
-                <th>Id</th>
-                <th>Name</th>
+                <th>Nom</th>
                 <th>Description</th>
-                <th>CreatedAt</th>
-                <th>actions</th>
+                <th>Créé par</th>
+                <th>Créé le</th>
+                <th></th>
             </tr>
         </thead>
         <tbody>
         {% for salon in salons %}
             <tr>
-                <td>{{ salon.id }}</td>
-                <td>{{ salon.name }}</td>
+                <td><a href="{{ path('app_salon_show', {id: salon.id}) }}"># {{ salon.name }}</a></td>
                 <td>{{ salon.description }}</td>
-                <td>{{ salon.createdAt ? salon.createdAt|date('Y-m-d H:i:s') : '' }}</td>
+                <td>{{ salon.owner.username }}</td>
+                <td>{{ salon.createdAt|date('d/m/Y H:i') }}</td>
                 <td>
-                    <a href="{{ path('app_salon_show', {'id': salon.id}) }}">show</a>
-                    <a href="{{ path('app_salon_edit', {'id': salon.id}) }}">edit</a>
+                    {% if salon.owner == app.user %}
+                        <a href="{{ path('app_salon_edit', {id: salon.id}) }}">Modifier</a>
+                    {% endif %}
                 </td>
             </tr>
         {% else %}
-            <tr>
-                <td colspan="5">no records found</td>
-            </tr>
+            <tr><td colspan="5">Aucun salon pour le moment.</td></tr>
         {% endfor %}
         </tbody>
     </table>
-
-    <a href="{{ path('app_salon_new') }}">Create new</a>
 {% endblock %}

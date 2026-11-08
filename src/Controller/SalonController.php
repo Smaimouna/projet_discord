@@ -2,7 +2,9 @@
 
 namespace App\Controller;
 
+use App\Entity\Message;
 use App\Entity\Salon;
+use App\Form\MessageType;
 use App\Form\SalonType;
 use App\Repository\SalonRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -31,13 +33,12 @@ final class SalonController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid()) {
             $salon->setOwner($this->getUser());
-
             $entityManager->persist($salon);
             $entityManager->flush();
 
             $this->addFlash('success', 'Salon créé.');
 
-            return $this->redirectToRoute('app_salon_index', [], Response::HTTP_SEE_OTHER);
+            return $this->redirectToRoute('app_salon_show', ['id' => $salon->getId()], Response::HTTP_SEE_OTHER);
         }
 
         return $this->render('salon/new.html.twig', [
@@ -46,15 +47,30 @@ final class SalonController extends AbstractController
         ]);
     }
 
-    #[Route('/{id}', name: 'app_salon_show', methods: ['GET'])]
-    public function show(Salon $salon): Response
+    #[Route('/{id}', name: 'app_salon_show', methods: ['GET', 'POST'], requirements: ['id' => '\d+'])]
+    public function show(Salon $salon, Request $request, EntityManagerInterface $entityManager, SalonRepository $salonRepository): Response
     {
+        $message = new Message();
+        $form = $this->createForm(MessageType::class, $message);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $message->setAuthor($this->getUser());
+            $message->setSalon($salon);
+            $entityManager->persist($message);
+            $entityManager->flush();
+
+            return $this->redirectToRoute('app_salon_show', ['id' => $salon->getId()], Response::HTTP_SEE_OTHER);
+        }
+
         return $this->render('salon/show.html.twig', [
             'salon' => $salon,
+            'salons' => $salonRepository->findBy([], ['name' => 'ASC']),
+            'form' => $form,
         ]);
     }
 
-    #[Route('/{id}/edit', name: 'app_salon_edit', methods: ['GET', 'POST'])]
+    #[Route('/{id}/edit', name: 'app_salon_edit', methods: ['GET', 'POST'], requirements: ['id' => '\d+'])]
     public function edit(Request $request, Salon $salon, EntityManagerInterface $entityManager): Response
     {
         if ($salon->getOwner() !== $this->getUser()) {
@@ -69,7 +85,7 @@ final class SalonController extends AbstractController
 
             $this->addFlash('success', 'Salon modifié.');
 
-            return $this->redirectToRoute('app_salon_index', [], Response::HTTP_SEE_OTHER);
+            return $this->redirectToRoute('app_salon_show', ['id' => $salon->getId()], Response::HTTP_SEE_OTHER);
         }
 
         return $this->render('salon/edit.html.twig', [
@@ -78,7 +94,7 @@ final class SalonController extends AbstractController
         ]);
     }
 
-    #[Route('/{id}', name: 'app_salon_delete', methods: ['POST'])]
+    #[Route('/{id}/delete', name: 'app_salon_delete', methods: ['POST'], requirements: ['id' => '\d+'])]
     public function delete(Request $request, Salon $salon, EntityManagerInterface $entityManager): Response
     {
         if ($salon->getOwner() !== $this->getUser()) {
